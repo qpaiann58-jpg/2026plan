@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { StudyPlan } from "../types";
+import { StudyPlan } from "../types.ts";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -16,14 +16,14 @@ export const getStudyAdvice = async (plan: Omit<StudyPlan, 'id' | 'tasks'>) => {
       結束日期：${plan.endDate}
       `,
       config: {
-        systemInstruction: "你是一位資深的學習教練。請根據學生的讀書計畫，分析其難易度，並給出具體的執行策略與鼓勵。回覆應保持專業且親切。請使用繁體中文回覆。",
+        systemInstruction: "你是一位資深的學習教練。回覆應保持專業且親切。請使用繁體中文回覆。",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            advice: { type: Type.STRING, description: "具體的讀書策略與建議" },
-            difficulty: { type: Type.STRING, description: "難易度評估 (Easy, Moderate, Challenging, Intense)" },
-            suggestedPace: { type: Type.STRING, description: "建議的每日讀書節奏描述" }
+            advice: { type: Type.STRING },
+            difficulty: { type: Type.STRING },
+            suggestedPace: { type: Type.STRING }
           },
           required: ["advice", "difficulty", "suggestedPace"]
         }
@@ -32,9 +32,8 @@ export const getStudyAdvice = async (plan: Omit<StudyPlan, 'id' | 'tasks'>) => {
 
     return JSON.parse(response.text);
   } catch (error) {
-    console.error("Gemini API Error:", error);
     return {
-      advice: "保持穩定的節奏，每天持續學習是成功的關鍵！",
+      advice: "每天持續學習是成功的關鍵！",
       difficulty: "Moderate",
       suggestedPace: "每日穩定進度"
     };
