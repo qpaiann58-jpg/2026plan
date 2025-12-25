@@ -7,7 +7,7 @@ export interface StudyPlan {
   endDate: string;
   totalPages: number;
   completedPages: number;
-  frequencyPerWeek: number; // 每週讀書天數
+  frequencyPerWeek: number;
   color: string;
   tasks: DailyTask[];
   aiAdvice?: string;
@@ -19,7 +19,16 @@ export interface DailyTask {
   pagesToRead: number;
   isCompleted: boolean;
   minutesSpent: number;
-  isRestDay: boolean; // 是否為休息日
+  isRestDay: boolean;
+}
+
+export interface FixedEvent {
+  id: string;
+  title: string;
+  dayOfWeek: number; // 0-6, 0 is Sunday
+  startTime: string; // "HH:mm"
+  endTime: string;   // "HH:mm"
+  isAI?: boolean;
 }
 
 export interface ProjectPlan {
@@ -39,12 +48,6 @@ export interface ProjectTask {
   name: string;
   deadline: string;
   isCompleted: boolean;
-}
-
-export interface AIAnalysisResponse {
-  advice: string;
-  difficulty: 'Easy' | 'Moderate' | 'Challenging' | 'Intense';
-  suggestedPace: string;
 }
 
 export type ViewType = 'plans' | 'stats' | 'projects';

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { StudyPlan, ViewType, ProjectPlan } from './types.ts';
+import { StudyPlan, ViewType, ProjectPlan, FixedEvent } from './types.ts';
 import { Icons } from './services/constants.tsx';
 import PlanForm from './components/PlanForm.tsx';
 import PlanCard from './components/PlanCard.tsx';
@@ -8,7 +8,7 @@ import PlanDetail from './components/PlanDetail.tsx';
 import StatsView from './components/StatsView.tsx';
 import ProjectView from './components/ProjectView.tsx';
 import PomodoroTimer from './components/PomodoroTimer.tsx';
-import { getStudyAdvice } from './services/geminiService.ts';
+import { getStudyAdvice, parseSchedule } from './services/geminiService.ts';
 
 const App: React.FC = () => {
   const [plans, setPlans] = useState<StudyPlan[]>(() => {
@@ -18,6 +18,11 @@ const App: React.FC = () => {
 
   const [projects, setProjects] = useState<ProjectPlan[]>(() => {
     const saved = localStorage.getItem('study_projects_2026');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [fixedEvents, setFixedEvents] = useState<FixedEvent[]>(() => {
+    const saved = localStorage.getItem('study_fixed_events_2026');
     return saved ? JSON.parse(saved) : [];
   });
   
@@ -34,6 +39,10 @@ const App: React.FC = () => {
     localStorage.setItem('study_projects_2026', JSON.stringify(projects));
   }, [projects]);
 
+  useEffect(() => {
+    localStorage.setItem('study_fixed_events_2026', JSON.stringify(fixedEvents));
+  }, [fixedEvents]);
+
   const handleAddPlan = async (newPlanData: Omit<StudyPlan, 'id'>) => {
     setIsLoading(true);
     setShowForm(false);
@@ -49,6 +58,25 @@ const App: React.FC = () => {
 
     setPlans(prev => [newPlan, ...prev]);
     setIsLoading(false);
+  };
+
+  const handleAISchedule = async (text: string) => {
+    setIsLoading(true);
+    const newEvents = await parseSchedule(text, fixedEvents);
+    if (newEvents.length > 0) {
+      setFixedEvents(prev => [...prev, ...newEvents]);
+    }
+    setIsLoading(false);
+  };
+
+  const handleClearFixedEvents = () => {
+    if (confirm('確定要清除所有行程嗎？')) {
+      setFixedEvents([]);
+    }
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    setFixedEvents(prev => prev.filter(e => e.id !== eventId));
   };
 
   const handleDeletePlan = (id: string) => {
@@ -74,12 +102,11 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleAddMinutes = (planId: string, minutes: number) => {
-    const today = new Date().toISOString().split('T')[0];
+  const handleAddMinutes = (planId: string, taskDate: string, minutes: number) => {
     setPlans(prev => prev.map(plan => {
       if (plan.id === planId) {
         const updatedTasks = plan.tasks.map(task => 
-          task.date === today ? { ...task, minutesSpent: task.minutesSpent + minutes } : task
+          task.date === taskDate ? { ...task, minutesSpent: task.minutesSpent + minutes } : task
         );
         return { 
           ...plan, 
@@ -94,7 +121,8 @@ const App: React.FC = () => {
   const handlePomodoroComplete = (mins: number) => {
     if (plans.length === 0) return;
     const targetPlanId = selectedPlanId || plans[0].id;
-    handleAddMinutes(targetPlanId, mins);
+    const today = new Date().toISOString().split('T')[0];
+    handleAddMinutes(targetPlanId, today, mins);
   };
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
@@ -112,7 +140,7 @@ const App: React.FC = () => {
         <div className="flex bg-[#F5EBE0] p-1 rounded-2xl">
           <button onClick={() => setActiveView('plans')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeView === 'plans' ? 'bg-[#A9927D] text-white' : 'text-[#8E7D6F]'}`}>計劃</button>
           <button onClick={() => setActiveView('projects')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeView === 'projects' ? 'bg-[#A9927D] text-white' : 'text-[#8E7D6F]'}`}>專題</button>
-          <button onClick={() => setActiveView('stats')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeView === 'stats' ? 'bg-[#A9927D] text-white' : 'text-[#8E7D6F]'}`}>數據</button>
+          <button onClick={() => setActiveView('stats')} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeView === 'stats' ? 'bg-[#A9927D] text-white' : 'text-[#8E7D6F]'}`}>行事曆</button>
         </div>
 
         <button onClick={() => setShowForm(true)} className="bg-[#A9927D] text-white px-4 py-2 rounded-2xl font-bold shadow-lg">+</button>
@@ -127,7 +155,7 @@ const App: React.FC = () => {
             {plans.length === 0 && <div className="col-span-full text-center py-20 opacity-50">尚無計劃，請點擊右上角新增。</div>}
           </div>
         ) : activeView === 'stats' ? (
-          <StatsView plans={plans} />
+          <StatsView plans={plans} fixedEvents={fixedEvents} onAISchedule={handleAISchedule} onClearEvents={handleClearFixedEvents} onDeleteEvent={handleDeleteEvent} projects={projects} />
         ) : (
           <ProjectView projects={projects} onUpdateProjects={setProjects} />
         )}
@@ -135,8 +163,11 @@ const App: React.FC = () => {
 
       <PomodoroTimer onSessionComplete={handlePomodoroComplete} isActiveSession={false} />
       {showForm && <PlanForm onSubmit={handleAddPlan} onCancel={() => setShowForm(false)} />}
-      {selectedPlan && <PlanDetail plan={selectedPlan} onToggleTask={handleToggleTask} onClose={() => setSelectedPlanId(null)} onAddMinutes={(pid, date, mins) => handleAddMinutes(pid, mins)} />}
-      {isLoading && <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center text-white">AI 分析中...</div>}
+      {selectedPlan && <PlanDetail plan={selectedPlan} onToggleTask={handleToggleTask} onClose={() => setSelectedPlanId(null)} onAddMinutes={handleAddMinutes} />}
+      {isLoading && <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center text-white gap-4">
+        <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+        <p className="font-bold text-lg animate-pulse tracking-widest">AI 行程規劃中...</p>
+      </div>}
     </div>
   );
 };
