@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { StudyPlan } from '../types';
-import { Icons } from '../services/constants';
+import { StudyPlan } from '../types.ts';
+import { Icons } from '../services/constants.tsx';
 
 interface StatsViewProps {
   plans: StudyPlan[];

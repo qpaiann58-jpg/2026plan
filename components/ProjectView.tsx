@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { ProjectPlan, ProjectCategory, ProjectTask } from '../types';
-import { Icons } from '../services/constants';
+import { ProjectPlan, ProjectCategory, ProjectTask } from '../types.ts';
+import { Icons } from '../services/constants.tsx';
 
 interface ProjectViewProps {
   projects: ProjectPlan[];
