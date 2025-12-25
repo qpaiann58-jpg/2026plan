@@ -5,11 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>StudyFlow 2026</title>
-    <link rel="manifest" href="manifest.json">
+    <!-- 確保所有路徑都使用 ./ 開頭，不要使用 / -->
+    <link rel="manifest" href="./manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #FDF8F5; margin: 0; line-height: inherit; }
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #FDF8F5; margin: 0; line-height: inherit; color: #4F4238; }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
     </style>
     <script type="importmap">
 {
@@ -27,9 +31,26 @@
 </head>
 <body>
     <div id="root"></div>
-    <!-- esm.sh/run 會自動偵測並編譯底下的 type="module" 的 TSX 檔案 -->
+
+    <!-- 這是唯一的轉換器：它會尋找下方 type="text/tsx" 的標籤 -->
     <script type="module" src="https://esm.sh/run"></script>
-    <script type="module" src="./index.tsx"></script>
+
+    <!-- 
+      關鍵修正：
+      1. 使用 type="text/tsx" 讓瀏覽器忽略它（不報 MIME 錯誤）
+      2. esm.sh/run 會接手讀取這個檔案並進行編譯
+      3. 務必使用 ./index.tsx
+    -->
+    <script type="text/tsx" src="./index.tsx"></script>
+
+    <script>
+      // 註冊 Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(console.error);
+        });
+      }
+    </script>
 <script type="module" src="/index.tsx"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'studyflow-v2.5';
+const CACHE_NAME = 'studyflow-v2.6';
 const ASSETS = [
   './',
   './index.html',
@@ -27,10 +27,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // 讓所有的編譯器請求與 API 請求直接通過，不進入快取，避免空白頁
+  // 排除第三方庫與 API 請求，確保開發中版本即時更新
   if (
     event.request.url.includes('esm.sh') || 
     event.request.url.includes('googleapis') ||
+    event.request.url.includes('googleSearch') ||
     event.request.url.endsWith('.tsx') ||
     event.request.url.endsWith('.ts')
   ) {
