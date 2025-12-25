@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'studyflow-v2.5';
+const CACHE_NAME = 'studyflow-v2.6';
 const ASSETS = [
   './',
   './index.html',
@@ -27,19 +27,25 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // 讓所有的編譯器請求與 API 請求直接通過，不進入快取，避免空白頁
+  const url = new URL(event.request.url);
+  
+  // 排除開發所需的外部資源與原始碼檔案，讓它們走網絡以供編譯器 (esm.sh/run) 處理
   if (
-    event.request.url.includes('esm.sh') || 
-    event.request.url.includes('googleapis') ||
-    event.request.url.endsWith('.tsx') ||
-    event.request.url.endsWith('.ts')
+    url.hostname.includes('esm.sh') || 
+    url.hostname.includes('googleapis') ||
+    url.hostname.includes('gstatic') ||
+    url.pathname.endsWith('.tsx') ||
+    url.pathname.endsWith('.ts')
   ) {
-    return;
+    return; // 不調用 respondWith，讓請求直接發送到網絡
   }
 
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      return response || fetch(event.request).catch(() => {
+        // 如果網絡失敗且無快取，則回傳 null
+        return null;
+      });
     })
   );
 });

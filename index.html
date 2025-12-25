@@ -10,8 +10,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #FDF8F5; color: #4F4238; }
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #FDF8F5; color: #4F4238; margin: 0; }
         .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        /* 捲軸美化 */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #D5BDAF; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #A9927D; }
     </style>
     <script type="importmap">
 {
@@ -20,8 +25,8 @@
     "react-dom": "https://esm.sh/react-dom@19",
     "react-dom/client": "https://esm.sh/react-dom@19/client",
     "@google/genai": "https://esm.sh/@google/genai",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react-dom/": "https://esm.sh/react-dom@19/",
+    "react/": "https://esm.sh/react@19/"
   }
 }
 </script>
@@ -29,12 +34,15 @@
 </head>
 <body>
     <div id="root"></div>
-    <!-- 使用 esm.sh/run 直接執行 TSX -->
-    <script type="module">
-        import { run } from 'https://esm.sh/run';
-        run();
+    <!-- 修正：直接引入 esm.sh/run，它會自動處理 index.tsx 的編譯與執行 -->
+    <script src="https://esm.sh/run" type="module"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
+        });
+      }
     </script>
-    <script type="text/babel" data-type="module" src="./index.tsx"></script>
 <script type="module" src="/index.tsx"></script>
 </body>
 </html>
