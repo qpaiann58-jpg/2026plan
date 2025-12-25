@@ -1,28 +1,15 @@
 
-const CACHE_NAME = 'studyflow-v2.1';
+const CACHE_NAME = 'studyflow-v2.5';
 const ASSETS = [
-  'index.html',
-  'index.tsx',
-  'App.tsx',
-  'types.ts',
-  'manifest.json',
-  'services/constants.tsx',
-  'services/geminiService.ts',
-  'components/PlanForm.tsx',
-  'components/PlanCard.tsx',
-  'components/PlanDetail.tsx',
-  'components/StatsView.tsx',
-  'components/ProjectView.tsx',
-  'components/PomodoroTimer.tsx'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // 確保即使某些資源失敗，主要外殼也能安裝
-      return Promise.allSettled(
-        ASSETS.map(asset => cache.add(asset))
-      );
+      return cache.addAll(ASSETS);
     })
   );
   self.skipWaiting();
@@ -36,28 +23,23 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // 忽略 AI API 請求
-  if (event.request.url.includes('generativelanguage.googleapis.com')) return;
+  // 讓所有的編譯器請求與 API 請求直接通過，不進入快取，避免空白頁
+  if (
+    event.request.url.includes('esm.sh') || 
+    event.request.url.includes('googleapis') ||
+    event.request.url.endsWith('.tsx') ||
+    event.request.url.endsWith('.ts')
+  ) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((response) => {
-      if (response) return response;
-      
-      return fetch(event.request).then((fetchRes) => {
-        // 只快取有效的 GET 請求
-        if (!fetchRes || fetchRes.status !== 200 || fetchRes.type !== 'basic' && !event.request.url.includes('esm.sh')) {
-          return fetchRes;
-        }
-
-        const responseToCache = fetchRes.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return fetchRes;
-      });
+      return response || fetch(event.request);
     })
   );
 });
