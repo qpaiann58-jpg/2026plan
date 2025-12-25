@@ -6,18 +6,13 @@
     <title>StudyFlow 2026 - 智能讀書計劃</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#A9927D">
+    
+    <!-- 引入外部 CSS 檔案，解決 404 問題 -->
+    <link rel="stylesheet" href="index.css">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #FDF8F5; color: #4F4238; margin: 0; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* 捲軸美化 */
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #D5BDAF; border-radius: 10px; }
-    </style>
+    
     <script type="importmap">
 {
   "imports": {
@@ -35,12 +30,11 @@
 <body>
     <div id="root"></div>
     
-    <!-- 正確用法：直接引入 esm.sh/run -->
-    <!-- 它會自動尋找並編譯同目錄下的 index.tsx -->
+    <!-- 使用 esm.sh/run 自動編譯 index.tsx -->
     <script src="https://esm.sh/run" type="module"></script>
 
     <script>
-      // 強力解安裝現有的 Service Worker 以防它持續快取錯誤的頁面
+      // 強制解除安裝 Service Worker 以確保載入最新檔案
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(registrations => {
           for(let registration of registrations) {
@@ -49,7 +43,7 @@
         });
       }
       
-      // 清理所有快取，確保能抓到最新修正的檔案
+      // 清理 Cache Storage
       if (window.caches) {
         caches.keys().then(names => {
           for (let name of names) caches.delete(name);
